@@ -6,6 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, classification_report
 from sklearn.preprocessing import StandardScaler
 import tsfel
+import joblib
 
 # Set up plotting
 plt.style.use('default')
@@ -346,6 +347,13 @@ def main():
             har.print_results(model_name)
             har.plot_confusion_matrix(model_name)
             har.error_analysis(model_name)
+
+            if model_name == 'tsfel':
+                print("\nSAVING TSFEL MODEL AND SCALER...")
+                model_to_save = har.models['tsfel']
+                joblib.dump(model_to_save['model'], 'tsfel_model.pkl')
+                joblib.dump(model_to_save['scaler'], 'tsfel_scaler.pkl')
+                print("✅ Model and scaler saved successfully!")
         
         # Compare models
         print(f"\n{'='*60}")
