@@ -10,14 +10,7 @@ import tsfel
 import warnings
 warnings.filterwarnings('ignore')
 
-def solve_task3_question1_fixed_linear_accel():
-    """
-    Task 3 Question 1 - FIXED VERSION for Linear Accelerometer Data
-    UCI Model Prediction on Personal Linear Accelerometer Data
-    """
-    print("🚀 TASK 3 - QUESTION 1: UCI MODEL ON PERSONAL DATA (LINEAR ACCEL)")
-    print("="*75)
-    
+def solve_task3_question1_linear_accel():  
     activities = ['WALKING', 'WALKING_UPSTAIRS', 'WALKING_DOWNSTAIRS', 
                   'SITTING', 'STANDING', 'LAYING']
     
@@ -27,17 +20,17 @@ def solve_task3_question1_fixed_linear_accel():
         y_personal = []
         file_info = []
         
-        print(f"📁 Loading Linear Accelerometer data from: {data_dir}")
+        print(f"Loading Linear Accelerometer data from: {data_dir}")
         
         for activity_idx, activity in enumerate(activities):
             activity_path = os.path.join(data_dir, activity)
             
             if not os.path.exists(activity_path):
-                print(f"⚠️  Activity folder not found: {activity}")
+                print(f"Activity folder not found: {activity}")
                 continue
             
             csv_files = [f for f in os.listdir(activity_path) if f.endswith('.csv')]
-            print(f"  📊 {activity}: {len(csv_files)} files found")
+            print(f"  {activity}: {len(csv_files)} files found")
             
             for csv_file in csv_files:
                 try:
@@ -45,17 +38,17 @@ def solve_task3_question1_fixed_linear_accel():
                     
                     # Read CSV, skip comment lines starting with #
                     df = pd.read_csv(file_path, comment='#')
-                    print(f"    📈 {csv_file}: {len(df)} samples (~50Hz)")
+                    print(f"    {csv_file}: {len(df)} samples (~50Hz)")
                     
                     # Extract Linear Accelerometer data (ax, ay, az - columns 1,2,3)
                     if df.shape[1] >= 4 and 'ax (m/s^2)' in df.columns:
                         accel_data = df[['ax (m/s^2)', 'ay (m/s^2)', 'az (m/s^2)']].values
                     else:
-                        print(f"⚠️  Unexpected format in {csv_file}")
+                        print(f"Unexpected format in {csv_file}")
                         continue
                     
                     # Data is already ~50Hz, so minimal processing needed
-                    print(f"    ✅ Linear Accel Data: {len(accel_data)} samples at ~50Hz")
+                    print(f"    Linear Accel Data: {len(accel_data)} samples at ~50Hz")
                     
                     # Create 10-second segments (500 samples at 50Hz)
                     target_samples = 500
@@ -80,14 +73,14 @@ def solve_task3_question1_fixed_linear_accel():
                         padding = np.tile(segment[-1], (padding_needed, 1))
                         segment = np.vstack([segment, padding])
                     
-                    print(f"    ✅ Final segment: {len(segment)} samples (10s at 50Hz)")
+                    print(f"    Final segment: {len(segment)} samples (10s at 50Hz)")
                     
                     X_personal.append(segment)
                     y_personal.append(activity_idx)
                     file_info.append(f"{activity}/{csv_file}")
                     
                 except Exception as e:
-                    print(f"❌ Error processing {csv_file}: {e}")
+                    print(f"Error processing {csv_file}: {e}")
         
         return np.array(X_personal), np.array(y_personal), file_info
     
@@ -96,7 +89,7 @@ def solve_task3_question1_fixed_linear_accel():
         Extract TSFEL features compatible with UCI model
         Using the same method as har_decision_trees.py for maximum compatibility
         """
-        print("🔧 Extracting TSFEL features (UCI-compatible method)...")
+        print("Extracting TSFEL features (UCI-compatible method)...")
         
         # Separate X, Y, Z axes from segments for TSFEL processing
         acc_x = X_segments[:, :, 0]  # All samples, all timepoints, X-axis
@@ -176,11 +169,11 @@ def solve_task3_question1_fixed_linear_accel():
                     features_list.append(np.zeros(33))  # Default 33 features
         
         features_array = np.array(features_list)
-        print(f"✅ TSFEL features extracted: {features_array.shape}")
+        print(f"TSFEL features extracted: {features_array.shape}")
         
         # Handle case where no features were extracted
         if features_array.shape[1] == 0:
-            print("⚠️  Falling back to manual feature extraction for all samples...")
+            print("Falling back to manual feature extraction for all samples...")
             basic_features = []
             for i in range(len(acc_x)):
                 features_x = extract_manual_features(acc_x[i])
@@ -195,12 +188,12 @@ def solve_task3_question1_fixed_linear_accel():
     
     def predict_with_uci_model(X_personal_features, y_personal, activities, file_info):
         """Load UCI model and make predictions on Linear Accelerometer data"""
-        print(f"\n🤖 Loading UCI-trained TSFEL model...")
+        print(f"\nLoading UCI-trained TSFEL model...")
         
         try:
             uci_model = joblib.load('tsfel_model.pkl')
             uci_scaler = joblib.load('tsfel_scaler.pkl')
-            print("✅ Successfully loaded UCI model and scaler")
+            print("Successfully loaded UCI model and scaler")
             
             expected_features = uci_scaler.mean_.shape[0] if hasattr(uci_scaler, 'mean_') else 468
             actual_features = X_personal_features.shape[1] 
@@ -209,24 +202,24 @@ def solve_task3_question1_fixed_linear_accel():
             print(f"   Linear Accel data has: {actual_features} features")
             
             if expected_features != actual_features:
-                print(f"⚠️  FEATURE DIMENSION MISMATCH!")
+                print(f"⚠️FEATURE DIMENSION MISMATCH!")
                 print(f"   Expected: {expected_features}, Got: {actual_features}")
                 
                 if actual_features < expected_features:
                     # Pad with zeros
                     padding = np.zeros((X_personal_features.shape[0], expected_features - actual_features))
                     X_personal_features = np.hstack([X_personal_features, padding])
-                    print(f"   ✅ Padded features to {X_personal_features.shape[1]}")
+                    print(f"   Padded features to {X_personal_features.shape[1]}")
                 else:
                     # Truncate
                     X_personal_features = X_personal_features[:, :expected_features]
-                    print(f"   ✅ Truncated features to {X_personal_features.shape[1]}")
+                    print(f"   Truncated features to {X_personal_features.shape[1]}")
             
             # Scale and predict
-            print("🔧 Scaling features...")
+            print("Scaling features...")
             X_scaled = uci_scaler.transform(X_personal_features)
             
-            print("🔮 Making predictions...")
+            print("Making predictions...")
             y_pred = uci_model.predict(X_scaled)
             y_pred_proba = uci_model.predict_proba(X_scaled)
             
@@ -236,7 +229,7 @@ def solve_task3_question1_fixed_linear_accel():
                 y_personal, y_pred, average='weighted', zero_division=0
             )
             
-            print(f"\n🎯 RESULTS:")
+            print(f"\nRESULTS:")
             print("="*50)
             print(f"Accuracy:  {accuracy:.4f} ({accuracy*100:.1f}%)")
             print(f"Precision: {precision:.4f}")
@@ -244,14 +237,14 @@ def solve_task3_question1_fixed_linear_accel():
             print(f"F1-Score:  {f1:.4f}")
             
             # Classification report
-            print(f"\n📋 DETAILED REPORT:")
+            print(f"\nDETAILED REPORT:")
             print(classification_report(y_personal, y_pred, target_names=activities, digits=4, zero_division=0))
             
             # Confusion matrix
             cm = confusion_matrix(y_personal, y_pred)
             
             # Sample predictions
-            print(f"\n🔍 PREDICTIONS:")
+            print(f"\nPREDICTIONS:")
             max_proba = np.max(y_pred_proba, axis=1)
             for i, info in enumerate(file_info):
                 true_act = activities[y_personal[i]]
@@ -269,21 +262,21 @@ def solve_task3_question1_fixed_linear_accel():
             plt.ylabel('True')
             plt.tight_layout()
             plt.savefig('task3_q1_linear_accel_results.png', dpi=300, bbox_inches='tight')
-            print(f"\n📊 Visualization saved as 'task3_q1_linear_accel_results.png'")
+            print(f"\nVisualization saved as 'task3_q1_linear_accel_results.png'")
             plt.close()  # Prevent hanging
             
             # Performance analysis
-            print(f"\n📈 PERFORMANCE ANALYSIS:")
+            print(f"\nPERFORMANCE ANALYSIS:")
             if accuracy >= 0.7:
-                print("   🟢 EXCELLENT: Great cross-domain performance with Linear Accelerometer!")
-                print("   🎯 The switch to Linear Accelerometer data significantly improved compatibility")
+                print("   EXCELLENT: Great cross-domain performance with Linear Accelerometer!")
+                print("   The switch to Linear Accelerometer data significantly improved compatibility")
             elif accuracy >= 0.5:
-                print("   🟡 GOOD: Decent cross-domain performance")
-                print("   📊 Linear Accelerometer data shows better UCI compatibility than gForce")
+                print("   GOOD: Decent cross-domain performance")
+                print("   Linear Accelerometer data shows better UCI compatibility than gForce")
             elif accuracy >= 0.3:
-                print("   🟠 MODERATE: Some improvement over previous gForce results")
+                print("   MODERATE: Some improvement over previous gForce results")
             else:
-                print("   🔴 CHALLENGING: Still facing domain gap issues")
+                print("   CHALLENGING: Still facing domain gap issues")
             
             return {
                 'accuracy': accuracy,
@@ -296,12 +289,12 @@ def solve_task3_question1_fixed_linear_accel():
             }
             
         except FileNotFoundError:
-            print("❌ Model files not found!")
+            print("Model files not found!")
             print("   Make sure 'tsfel_model.pkl' and 'tsfel_scaler.pkl' exist")
             print("   Run har_decision_trees.py first to generate these files")
             return None
         except Exception as e:
-            print(f"❌ Prediction error: {e}")
+            print(f"Prediction error: {e}")
             import traceback
             traceback.print_exc()
             return None
@@ -316,10 +309,10 @@ def solve_task3_question1_fixed_linear_accel():
         )
         
         if len(X_personal) == 0:
-            print("❌ No personal data found!")
+            print("No personal data found!")
             return None
         
-        print(f"\n📊 Data Summary:")
+        print(f"\nData Summary:")
         print(f"   Total samples: {len(X_personal)}")
         print(f"   Sample shape: {X_personal[0].shape}")
         print(f"   Data type: Linear Accelerometer (ax, ay, az in m/s²)")
@@ -331,7 +324,7 @@ def solve_task3_question1_fixed_linear_accel():
         results = predict_with_uci_model(X_features, y_personal, activities, file_info)
         
         if results:
-            print(f"\n🎉 TASK 3 QUESTION 1 COMPLETED!")
+            print(f"\nTASK 3 QUESTION 1 COMPLETED!")
             accuracy_pct = results['accuracy'] * 100
             print(f"   Final Accuracy: {results['accuracy']:.4f} ({accuracy_pct:.1f}%)")
             
@@ -340,21 +333,21 @@ def solve_task3_question1_fixed_linear_accel():
             print(f"   Improvement over gForce data: {improvement:+.1f} percentage points")
             
             if improvement > 0:
-                print("   🚀 SUCCESS: Linear Accelerometer data performs better than gForce!")
+                print("   SUCCESS: Linear Accelerometer data performs better than gForce!")
             
             return results
         else:
-            print("❌ Prediction failed!")
+            print("Prediction failed!")
             return None
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 # Execute the fixed solution
 if __name__ == "__main__":
-    results = solve_task3_question1_fixed_linear_accel()
+    results = solve_task3_question1_linear_accel()
     if results:
         print(f"\n🏁 SUCCESS! Linear Accelerometer Accuracy: {results['accuracy']:.4f}")
