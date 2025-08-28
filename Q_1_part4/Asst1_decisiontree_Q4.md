@@ -24,7 +24,7 @@ Thus the experiments align well with the theoretical expectations:
 
 | Case                  | Training Complexity | Prediction Complexity |
 |-----------------------|---------------------|------------------------|
-| Discrete X, Discrete y | \(O(NM)\)          | \(O(N \log N)\)        |
-| Discrete X, Real y     | \(O(NM)\)          | \(O(N \log N)\)        |
+| Discrete X, Discrete y | \(O(NM \log N)\)          | \(O(N \log N)\)        |
+| Discrete X, Real y     | \(O(NM \log N)\)          | \(O(N \log N)\)        |
 | Real X, Discrete y     | \(O(MN^2)\)        | \(O(N \log N)\)        |
 | Real X, Real y         | \(O(MN^2)\)        | \(O(N \log N)\)        |
