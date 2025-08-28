@@ -6,7 +6,7 @@ from metrics import *
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
-np.random.seed(22)
+np.random.seed(42)
 
 # Reading the data
 url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/auto-mpg/auto-mpg.data'
@@ -22,17 +22,17 @@ data = data.replace('?', np.nan).dropna()
 # Convert horsepower to float
 data['horsepower'] = data['horsepower'].astype(float)
 
-# 3) Split into features (X) and target (y)
+
 y = data['mpg']
-X = data.drop(['mpg', 'car name'], axis=1)   # drop target + non-numeric
+X = data.drop(['mpg', 'car name'], axis=1)   
 
 print("Features:\n", X.shape)
 print("Target:\n", y.shape)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=22, shuffle= True,
+    X, y, test_size=0.3, random_state=22, shuffle= True,
 )
-# 4) Train custom Decision Tree
+
 tree_custom = DecisionTree(criterion="mse", max_depth=5)
 tree_custom.fit(X_train, y_train)
 
@@ -48,8 +48,8 @@ rmse_test_c = rmse(y_hat_test_custom, y_test)
 mae_test_c = mae(y_hat_test_custom, y_test)
 r2_test_c = r2_score(y_test, y_hat_test_custom)
 
-# 5) Train sklearn Decision Tree
-sk_tree = DecisionTreeRegressor(criterion="squared_error", max_depth=5, random_state=22)
+
+sk_tree = DecisionTreeRegressor(criterion="squared_error", max_depth=5, random_state=42)
 sk_tree.fit(X_train, y_train)
 
 y_hat_train_sk = sk_tree.predict(X_train)
@@ -63,7 +63,7 @@ rmse_test_s = rmse(y_hat_test_sk, y_test)
 mae_test_s = mae(y_hat_test_sk, y_test)
 r2_test_s = r2_score(y_test, y_hat_test_sk)
 
-# 6) Report comparison
+
 print("\n=== Auto MPG Regression: Train vs Test ===")
 print("Custom DecisionTree:")
 print(f"  Train → RMSE: {rmse_train_c:.3f}, MAE: {mae_train_c:.3f}, R²: {r2_train_c:.3f}")

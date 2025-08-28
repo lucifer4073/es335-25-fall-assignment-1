@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from tree.utils import *
 import matplotlib.pyplot as plt
+import os
 
 np.random.seed(42)
 
@@ -30,10 +31,14 @@ class Node:
 class DecisionTree:
     criterion: Literal["information_gain", "gini_index"]
     max_depth: int
+    min_samples_split: int
+    min_samples_leaf: int
 
-    def __init__(self, criterion, max_depth=5):
+    def __init__(self, criterion, max_depth=5, min_samples_split=2, min_samples_leaf=1):
         self.criterion = criterion
         self.max_depth = max_depth if max_depth is not None else 5
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
         self.root = None
         self.is_regression = None
 
@@ -44,14 +49,17 @@ class DecisionTree:
     def _build_tree(self, X, y, depth):
         node = Node()
 
-        # Stopping conditions
-        if depth >= self.max_depth or len(np.unique(y)) == 1 or len(X) == 0:
+        if (depth >= self.max_depth or 
+            len(np.unique(y)) == 1 or 
+            len(X) < self.min_samples_split or
+            len(X) == 0):
             node.prediction = np.mean(y) if self.is_regression else y.mode()[0]
             return node
 
         feature, threshold = opt_split_attribute(X, y, 
                                                  "mse" if self.is_regression else self.criterion,
-                                                 X.columns)
+                                                 X.columns,
+                                                 self.min_samples_leaf)
         if feature is None:
             node.prediction = np.mean(y) if self.is_regression else y.mode()[0]
             return node
@@ -59,11 +67,11 @@ class DecisionTree:
         node.feature = feature
         node.threshold = threshold
 
-        if threshold is not None:  # numeric split
+        if threshold is not None:
             (X_left, y_left), (X_right, y_right) = split_data(X, y, feature, threshold)
             node.left = self._build_tree(X_left, y_left, depth+1)
             node.right = self._build_tree(X_right, y_right, depth+1)
-        else:  # categorical split
+        else:
             node.children = {}
             splits = split_data(X, y, feature)
             for v, (X_sub, y_sub) in splits.items():
@@ -75,17 +83,20 @@ class DecisionTree:
         if node.prediction is not None:
             return node.prediction
 
-        if node.threshold is not None:  # numeric
+        if node.threshold is not None:
             if x[node.feature] <= node.threshold:
                 return self.predict_one(x, node.left)
             else:
                 return self.predict_one(x, node.right)
-        else:  # categorical
+        else:
             val = x[node.feature]
             if val in node.children:
                 return self.predict_one(x, node.children[val])
             else:
-                return list(node.children.values())[0].prediction  # fallback
+                predictions = [child.prediction for child in node.children.values() if child.prediction is not None]
+                if predictions:
+                    return max(set(predictions), key=predictions.count) 
+                return np.mean(list(node.children.values())[0].prediction)
 
     def predict(self, X: pd.DataFrame) -> pd.Series:
         preds = [self.predict_one(x, self.root) for _, x in X.iterrows()]

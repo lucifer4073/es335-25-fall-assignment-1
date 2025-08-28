@@ -14,7 +14,6 @@ def check_ifreal(y: pd.Series) -> bool:
     """
     return pd.api.types.is_float_dtype(y) or pd.api.types.is_numeric_dtype(y) and y.nunique() > 15
 
-
 def entropy(Y: pd.Series) -> float:
     """
     Function to calculate the entropy
@@ -64,7 +63,7 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
 
         return parent_impurity - weighted_impurity
 
-    elif criterion == "mse":  # regression
+    elif criterion == "mse":
         parent_error = mse(Y)
         values, counts = np.unique(attr, return_counts=True)
         weighted_error = 0
@@ -75,7 +74,7 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
         return parent_error - weighted_error
 
 
-def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.Series):
+def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.Series, min_samples_leaf: int):
     """
     Function to find the optimal attribute to split about.
     """
@@ -85,23 +84,23 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
 
     for feature in features:
         X_col = X[feature]
-        if check_ifreal(X_col):  # real valued
+        if check_ifreal(X_col):
             thresholds = np.unique(X_col)
             for t in thresholds:
                 left_mask = X_col <= t
                 right_mask = X_col > t
-                if left_mask.sum() == 0 or right_mask.sum() == 0:
+                if left_mask.sum() < min_samples_leaf or right_mask.sum() < min_samples_leaf:
                     continue
-
-                # Create pseudo-attr vector with two values
                 attr = pd.Series(["L" if v <= t else "R" for v in X_col], index=X_col.index)
                 gain = information_gain(y, attr, criterion if not check_ifreal(y) else "mse")
-
                 if gain > best_gain:
                     best_gain = gain
                     best_feature = feature
                     best_threshold = t
-        else:  # categorical
+        else:
+            value_counts = X_col.value_counts()
+            if (value_counts < min_samples_leaf).any():
+                continue
             gain = information_gain(y, X_col, criterion)
             if gain > best_gain:
                 best_gain = gain
@@ -109,7 +108,6 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
                 best_threshold = None
 
     return best_feature, best_threshold
-
 
 def split_data(X: pd.DataFrame, y: pd.Series, attribute, threshold=None):
     """
@@ -119,7 +117,7 @@ def split_data(X: pd.DataFrame, y: pd.Series, attribute, threshold=None):
         left_mask = X[attribute] <= threshold
         right_mask = X[attribute] > threshold
         return (X[left_mask], y[left_mask]), (X[right_mask], y[right_mask])
-    else:  # categorical
+    else:
         splits = {}
         for v in X[attribute].unique():
             mask = X[attribute] == v
